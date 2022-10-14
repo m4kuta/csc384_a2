@@ -1,3 +1,4 @@
+import copy
 import sys
 
 MAX_ROW, MAX_COL = 8, 8
@@ -8,6 +9,15 @@ class Board:
         self.player = None
         self.winner = None
         self.rCount, self.bCount, self.RCount, self.BCount = 0, 0, 0, 0
+
+    def __str__(self):
+        string = ''
+        for row in self.squares:
+            rowString = ''
+            for square in row:
+                rowString += square + ' '
+            string += rowString[:-1] + '\n'
+        return string
 
     def print(self):
         for row in self.squares:
@@ -58,48 +68,65 @@ def terminal(board: Board):
 
 def getMoves(board: Board, player):
     moves = []
+
     for i in range(MAX_ROW):
         for j in range(MAX_COL):
             piece: str = board.squares[i][j]
-            if piece.lower == player:
-                for move, skip in getValidMoves(board, piece, i, j).items():
-                    pass
 
-    return []
-
-def getValidMoves(board, piece, row, col):
-    moves = {}
-    row = row
-    left = col - 1
-    right = col + 1
-    up = ['r', 'R', 'B']
-    down = ['b', 'R', 'B']
-    if piece in up:
-        board.squares[row - 1][col - 1]
-
-
-
+            if piece.lower() == player:
+                moves.extend(getValidMoves(board, piece, i, j))
 
     return moves
 
-def tryUpLeft(board, row, col, captured = []):
-    moves = {}
+def getValidMoves(board, piece, row, col):
+    moves = []
 
-    newRow = row - 1
-    newCol = col - 1
+    captures = []
 
-    if newRow < 0 or newCol < 0:
+    if piece in ['r', 'R', 'B']:
+        moves += tryMove(board, piece, row, col, -1, -1) + tryMove(board, piece, row, col, -1, 1)
+    if piece in ['b', 'R', 'B']:
+        moves += tryMove(board, piece, row, col, 1, -1) + tryMove(board, piece, row, col, 1, 1)
+
+    return moves
+
+def tryMove(board, piece, oldRow, oldCol, deltaRow, deltaCol):
+    moves = []
+
+    newRow = oldRow + deltaRow
+    newCol = oldCol + deltaCol
+
+    if not isInBounds(newRow, newCol):
         return moves
 
-    if board.squares[newRow][newCol] == '.':
-        moves[(newRow, newCol)] = []
+    newSquare = board.squares[newRow][newCol]
+
+    if newSquare == '.':
+        boardCopy = copy.deepcopy(board)
+        movePiece(boardCopy, oldRow, oldCol, newRow, newCol)
+        moves.append(boardCopy)
+
+    elif piece.lower != newSquare.lower:
+        farRow = newRow + deltaRow
+        farCol = newCol + deltaCol
+
+        if not isInBounds(farRow, farCol):
+            return moves
+
+        farSquare = board.squares[farRow][farCol]
+        if farSquare == '.':
+            boardCopy = copy.deepcopy(board)
+            boardCopy.squares[newRow][newCol] = '.'
+            movePiece(boardCopy, oldRow, oldCol, farRow, farCol)
+            moves.extend(getValidMoves(boardCopy, piece, farRow, farCol))
+
+    return moves
 
 
+def isInBounds(row, col):
+    return 0 < row <  MAX_ROW and 0 < col < MAX_COL
 
-
-
-
-def moveSquare(board, row1, col1, row2, col2):
+def movePiece(board, row1, col1, row2, col2):
     square = board.squares[row1][col1]
     board.squares[row1][col1], board.squares[row2][col2] = board.squares[row2][col2], board.squares[row1][col1]
     # if square == 'r' and row2 == 0:
@@ -202,9 +229,9 @@ def writeBoard(board: Board, path):
             f.write('\n')
 
 
-inputBoard = readBoard(sys.argv[1])
-inputBoard.print()
-writeBoard(inputBoard, sys.argv[2])
-
+# inputBoard = readBoard(sys.argv[1])
+# inputBoard.print()
+# writeBoard(inputBoard, sys.argv[2])
+#
 # outPutBoard = minimax(inputBoard)
 # outputPath = sys.argv[2]

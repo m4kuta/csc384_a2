@@ -1,0 +1,67 @@
+﻿Get moves
+    Given a player, r or b
+
+    moves: list of boards after moving
+
+    For all pieces belonging to player
+        get pieces valid moves and add to moves
+
+
+Check if piece can move
+    given a piece and its row and col
+
+    captures = []
+
+    if piece red or king
+        up-left
+            empty
+                can move to row - 1, col - 1
+            red piece
+                cant move
+            OOB
+                cant move
+            black piece
+                if up-left x 2 empty
+                    can move to row - 2, col - 2
+                    capture piece at row - 1, col - 1
+                    recurse
+
+        up-right
+            empty
+                can move to row - 1, col + 1
+            red piece
+                cant move
+            OOB
+                cant move
+            black piece
+                if up-right x 2 empty
+                    can move to row - 2, col + 2
+                    capture piece at row - 1, col + 1
+                    recurse
+
+    if piece black or king
+        down-left
+            empty
+                can move to row + 1, col - 1
+            red piece
+                if down-left x 2 empty
+                    can move to row + 2, col - 2
+                    capture piece at row + 1, col - 1
+                    recurse
+            black piece
+                cant move
+            OOB
+                cant move
+
+        down-right
+            empty
+                can move to row + 1, col - 1
+            red piece
+                if down-left x 2 empty
+                    can move to row + 2, col - 2
+                    capture piece at row + 1, col - 1
+                    recurse
+            black piece
+                cant move
+            OOB
+                cant move
