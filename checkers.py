@@ -3,6 +3,9 @@ import sys
 
 MAX_ROW, MAX_COL = 8, 8
 
+# key: board, value: minimax val
+cache = {}
+
 class Board:
     def __init__(self):
         self.squares = []
@@ -110,10 +113,54 @@ def heuristic(board):
     # TODO
     return utility(board)
 
-# key: board, value: minimax val
-cache = {}
 
 def minimax(pos: Board, depth, isMax, alpha, beta):
+    # TODO:
+    # Depth limit
+    # AB pruning
+    # Ordering
+    # Check if nextBoard in cache
+    # Store value of new nextBoard into cache
+    bestMove = None
+
+    if depth == 0 or terminal(pos) is not None:
+        return utility(pos), bestMove
+
+    if isMax:
+        if pos in cache:
+            return cache[pos], bestMove
+
+        maxUtil = float('-inf')
+
+        for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
+            util = minimax(move, depth - 1, False, alpha, beta)[0]
+            if util > maxUtil:
+                maxUtil, bestMove = util, move
+            if maxUtil >= beta:
+                return maxUtil, bestMove
+            alpha = max(alpha, maxUtil)
+
+        cache[pos.hash()] = maxUtil
+        return maxUtil, bestMove
+    else:
+        if pos in cache:
+            return cache[pos], bestMove
+
+        minUtil = float('inf')
+
+        for move in getMoves(pos, 'b'):
+
+            util = minimax(move, depth - 1, True, alpha, beta)[0]
+            if util < minUtil:
+                minUtil, bestMove = util, move
+            if minUtil <= alpha:
+                return minUtil, bestMove
+            beta = min(alpha, minUtil)
+
+        cache[pos.hash()] = minUtil
+        return minUtil, bestMove
+
+def cacheMinimax(pos: Board, depth, isMax, alpha, beta):
     # TODO:
     # Depth limit
     # AB pruning
@@ -158,16 +205,72 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
         cache[pos.hash()] = minUtil
         return minUtil, bestMove
 
+
+def alphaBeta(pos: Board, depth, isMax, alpha, beta):
+    # TODO:
+    # Depth limit
+    # AB pruning
+    # Ordering
+    # Check if nextBoard in cache
+    # Store value of new nextBoard into cache
+    bestMove = None
+
+    if depth == 0 or terminal(pos) is not None:
+        return utility(pos), bestMove
+
+    if isMax:
+        maxUtil = float('-inf')
+
+        for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
+            util = minimax(move, depth - 1, False, alpha, beta)[0]
+            if util > maxUtil:
+                maxUtil, bestMove = util, move
+            if maxUtil >= beta:
+                return maxUtil, bestMove
+            alpha = max(alpha, maxUtil)
+
+        return maxUtil, bestMove
+    else:
+        minUtil = float('inf')
+
+        for move in getMoves(pos, 'b'):
+            util = minimax(move, depth - 1, True, alpha, beta)[0]
+            if util < minUtil:
+                minUtil, bestMove = util, move
+            if minUtil <= alpha:
+                return minUtil, bestMove
+            beta = min(alpha, minUtil)
+
+        return minUtil, bestMove
+
+
+def dfsMinimax(pos: Board, depth, isMax):
+    # Also take color?
+    # Depth limit
+    # AB pruning
+    # Ordering
+    # Check if nextBoard in cache
+    # Store value of new nextBoard into cache
+    if depth == 0 or terminal(pos):
+        return utility(pos, isMax), pos
+
+    if isMax:
+        minimaxMax(pos, depth)
+    else:
+        minimaxMin(pos, depth)
+
+
 def minimaxMax(pos, depth):
     maxUtil = float('-inf')
     bestMove = None
 
-    for move in getMoves(pos, 'r'): # TODO: decide if move == board state or something else
+    for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
         util = minimax(move, depth - 1, False)[0]
         if util > maxUtil:
             maxUtil, bestMove = util, move
 
     return maxUtil, bestMove
+
 
 def minimaxMin(pos, depth):
     minUtil = float('inf')

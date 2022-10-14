@@ -13,7 +13,7 @@ print()
 # for board in moves:
 #     board.print()
 
-util, outputBoard = minimax(inputBoard, 9, 'r', float('-inf'), float('inf'))
+util, outputBoard = cacheMinimax(inputBoard, 10, 'r', float('-inf'), float('inf'))
 print(util)
 outputBoard.print()
 
