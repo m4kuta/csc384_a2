@@ -116,11 +116,7 @@ def heuristic(board):
 
 def minimax(pos: Board, depth, isMax, alpha, beta):
     # TODO:
-    # Depth limit
-    # AB pruning
     # Ordering
-    # Check if nextBoard in cache
-    # Store value of new nextBoard into cache
     bestMove = None
 
     if depth == 0 or terminal(pos) is not None:
@@ -162,11 +158,7 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
 
 def cacheMinimax(pos: Board, depth, isMax, alpha, beta):
     # TODO:
-    # Depth limit
-    # AB pruning
     # Ordering
-    # Check if nextBoard in cache
-    # Store value of new nextBoard into cache
     bestMove = None
 
     if depth == 0 or terminal(pos) is not None:
@@ -208,11 +200,8 @@ def cacheMinimax(pos: Board, depth, isMax, alpha, beta):
 
 def alphaBeta(pos: Board, depth, isMax, alpha, beta):
     # TODO:
-    # Depth limit
-    # AB pruning
+    # Caching
     # Ordering
-    # Check if nextBoard in cache
-    # Store value of new nextBoard into cache
     bestMove = None
 
     if depth == 0 or terminal(pos) is not None:
@@ -245,14 +234,11 @@ def alphaBeta(pos: Board, depth, isMax, alpha, beta):
 
 
 def dfsMinimax(pos: Board, depth, isMax):
-    # Also take color?
-    # Depth limit
     # AB pruning
+    # Caching
     # Ordering
-    # Check if nextBoard in cache
-    # Store value of new nextBoard into cache
     if depth == 0 or terminal(pos):
-        return utility(pos, isMax), pos
+        return utility(pos), pos
 
     if isMax:
         minimaxMax(pos, depth)
@@ -264,8 +250,8 @@ def minimaxMax(pos, depth):
     maxUtil = float('-inf')
     bestMove = None
 
-    for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
-        util = minimax(move, depth - 1, False)[0]
+    for move in getMoves(pos, 'r'):
+        util = dfsMinimax(move, depth - 1, False)[0]
         if util > maxUtil:
             maxUtil, bestMove = util, move
 
@@ -277,7 +263,7 @@ def minimaxMin(pos, depth):
     bestMove = None
 
     for move in getMoves(pos, 'b'):
-        util = minimax(move, depth - 1, True)[0]
+        util = dfsMinimax(move, depth - 1, True)[0]
         if util < minUtil:
             minUtil, bestMove = util, move
 
