@@ -6,18 +6,7 @@ MAX_ROW, MAX_COL = 8, 8
 class Board:
     def __init__(self):
         self.squares = []
-        self.player = None
-        self.winner = None
         self.rCount, self.bCount, self.RCount, self.BCount = 0, 0, 0, 0
-
-    def __str__(self):
-        string = ''
-        for row in self.squares:
-            rowString = ''
-            for square in row:
-                rowString += square + ' '
-            string += rowString[:-1] + '\n'
-        return string
 
     def print(self):
         for row in self.squares:
@@ -35,36 +24,16 @@ class Board:
 
         return string
 
+def terminal(board: Board):
+    if board.rCount + board.RCount <= 0:
+        return 'b'
+    if board.bCount + board.BCount <= 0:
+        return 'r'
 
-def utility(board, color):
+def utility(board):
     redPoints = board.rCount + board.RCount * 2
     blackPoints = board.bCount + board.BCount * 2
-    if color == 'r':
-        return redPoints - blackPoints
-    if color == 'b':
-        return blackPoints - redPoints
-
-# def utility(board: Board, color: str):
-#     redPoints = 0
-#     blackPoints = 0
-#
-#     for piece in board.squares:
-#         if piece == 'r':
-#             redPoints += 1
-#         if piece == 'R':
-#             redPoints += 2
-#         if piece == 'b':
-#             redPoints += 1
-#         if piece == 'B':
-#             redPoints += 2
-#
-#     if color == 'r':
-#         return redPoints - blackPoints
-#     if color == 'b':
-#         return blackPoints - redPoints
-
-def terminal(board: Board):
-    return board.winner is not None
+    return redPoints - blackPoints
 
 def getMoves(board: Board, player):
     moves = []
@@ -80,8 +49,6 @@ def getMoves(board: Board, player):
 
 def getValidMoves(board, piece, row, col):
     moves = []
-
-    captures = []
 
     if piece in ['r', 'R', 'B']:
         moves += tryMove(board, piece, row, col, -1, -1) + tryMove(board, piece, row, col, -1, 1)
@@ -122,55 +89,60 @@ def tryMove(board, piece, oldRow, oldCol, deltaRow, deltaCol):
 
     return moves
 
-
 def isInBounds(row, col):
     return 0 < row <  MAX_ROW and 0 < col < MAX_COL
 
-def movePiece(board, row1, col1, row2, col2):
-    square = board.squares[row1][col1]
-    board.squares[row1][col1], board.squares[row2][col2] = board.squares[row2][col2], board.squares[row1][col1]
-    # if square == 'r' and row2 == 0:
-    #     square = 'R'
-    # if square == 'b' and row2 == MAX_ROW:
-    #     square = 'B'
-    if row2 == 0 or row2 == MAX_ROW - 1:
-        square.capitalize()
-        if square == 'R':
+def movePiece(board, oldRow, oldCol, newRow, newCol):
+    board.squares[oldRow][oldCol], board.squares[newRow][newCol] = \
+        board.squares[newRow][newCol], board.squares[oldRow][oldCol]
+
+    if newRow == 0 or newRow == MAX_ROW - 1:
+        board.squares[newRow][newCol].capitalize()
+
+        if board.squares[newRow][newCol] == 'R':
             board.RCount += 1
             board.rCount -= 1
         else: # square == 'B'
             board.BCount += 1
             board.bCount -= 1
 
-
-
-def result(board, move):
-    return board
-
-def player(board):
-    return board.player
-
 def heuristic(board):
-    # Implement custom heuristic
+    # TODO
     return utility(board)
 
 # key: board, value: minimax val
 cache = {}
 
 def minimax(pos: Board, depth, isMax):
-    # Also take color?
+    # TODO:
     # Depth limit
     # AB pruning
     # Ordering
     # Check if nextBoard in cache
     # Store value of new nextBoard into cache
-    if depth == 0 or terminal(pos):
-        return utility(pos, isMax), pos
+    bestMove = None
+
+    if depth == 0 or terminal(pos) is not None:
+        return utility(pos), bestMove
 
     if isMax:
-        minimaxMax(pos, depth)
+        maxUtil = float('-inf')
+
+        for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
+            util = minimax(move, depth - 1, False)[0]
+            if util > maxUtil:
+                maxUtil, bestMove = util, move
+
+        return maxUtil, bestMove
     else:
-        minimaxMin(pos, depth)
+        minUtil = float('inf')
+
+        for move in getMoves(pos, 'b'):
+            util = minimax(move, depth - 1, True)[0]
+            if util < minUtil:
+                minUtil, bestMove = util, move
+
+        return minUtil, bestMove
 
 def minimaxMax(pos, depth):
     maxUtil = float('-inf')
@@ -196,7 +168,6 @@ def minimaxMin(pos, depth):
 
 def readBoard(path: str):
     board = Board()
-    board.player = 'r'
 
     with open(path) as f:
         lines = f.read().splitlines()
@@ -230,8 +201,4 @@ def writeBoard(board: Board, path):
 
 
 # inputBoard = readBoard(sys.argv[1])
-# inputBoard.print()
-# writeBoard(inputBoard, sys.argv[2])
-#
-# outPutBoard = minimax(inputBoard)
-# outputPath = sys.argv[2]
+# writeBoard(minimax(inputBoard, 5, 'r')[1], sys.argv[2])
