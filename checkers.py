@@ -150,6 +150,49 @@ def heuristic(board):
     return utility(board)
 
 def minimax(pos: Board, depth, isMax, alpha, beta):
+    """
+    Final minimax algo
+    """
+    bestMove = None
+
+    if depth == 0 or terminal(pos) is not None:
+        return utility(pos), bestMove
+
+    if pos in cache:
+        return cache[pos], bestMove
+
+    if isMax:
+        util = -sys.maxsize - 1
+    else:
+        util = sys.maxsize
+
+    for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
+        newUtil = minimax(move, depth - 1, False, alpha, beta)[0]
+
+        if isMax:
+            if newUtil > util:
+                util, bestMove = newUtil, move
+
+            if util >= beta:
+                cache[pos.hash()] = util
+                return util, bestMove
+
+            alpha = max(alpha, util)
+
+        else:
+            if newUtil < util:
+                util, bestMove = newUtil, move
+
+            if util <= alpha:
+                cache[pos.hash()] = util
+                return util, bestMove
+
+            beta = min(alpha, util)
+
+    cache[pos.hash()] = util
+    return util, bestMove
+
+def minimax2(pos: Board, depth, isMax, alpha, beta):
     # TODO:
     # Ordering
     bestMove = None
@@ -163,7 +206,7 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
 
         maxUtil = -sys.maxsize - 1
 
-        for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
+        for move in getMoves(pos, 'r'):
             util = minimax(move, depth - 1, False, alpha, beta)[0]
             if util > maxUtil:
                 maxUtil, bestMove = util, move
@@ -205,7 +248,7 @@ def cacheMinimax(pos: Board, depth, isMax, alpha, beta):
 
         maxUtil = -sys.maxsize - 1
 
-        for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
+        for move in getMoves(pos, 'r'):
             util = minimax(move, depth - 1, False, alpha, beta)[0]
             if util > maxUtil:
                 maxUtil, bestMove = util, move
@@ -245,7 +288,7 @@ def alphaBetaMiniMax(pos: Board, depth, isMax, alpha, beta):
     if isMax:
         maxUtil = -sys.maxsize - 1
 
-        for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
+        for move in getMoves(pos, 'r'):
             util = minimax(move, depth - 1, False, alpha, beta)[0]
             if util > maxUtil:
                 maxUtil, bestMove = util, move
@@ -337,6 +380,5 @@ def writeBoard(board: Board, path):
             f.write(string)
             f.write('\n')
 
-
-# inputBoard = readBoard(sys.argv[1])
-# writeBoard(minimax(inputBoard, 5, 'r', -sys.maxsize - 1, sys.maxsize)[1], sys.argv[2])
+inputBoard = readBoard(sys.argv[1])
+writeBoard(minimax(inputBoard, 10, 'r', -sys.maxsize - 1, sys.maxsize)[1], sys.argv[2])
