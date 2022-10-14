@@ -113,7 +113,7 @@ def heuristic(board):
 # key: board, value: minimax val
 cache = {}
 
-def minimax(pos: Board, depth, isMax):
+def minimax(pos: Board, depth, isMax, alpha, beta):
     # TODO:
     # Depth limit
     # AB pruning
@@ -129,18 +129,24 @@ def minimax(pos: Board, depth, isMax):
         maxUtil = float('-inf')
 
         for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
-            util = minimax(move, depth - 1, False)[0]
+            util = minimax(move, depth - 1, False, alpha, beta)[0]
             if util > maxUtil:
                 maxUtil, bestMove = util, move
+            if maxUtil >= beta:
+                return maxUtil, bestMove
+            alpha = max(alpha, maxUtil)
 
         return maxUtil, bestMove
     else:
         minUtil = float('inf')
 
         for move in getMoves(pos, 'b'):
-            util = minimax(move, depth - 1, True)[0]
+            util = minimax(move, depth - 1, True, alpha, beta)[0]
             if util < minUtil:
                 minUtil, bestMove = util, move
+            if minUtil <= alpha:
+                return minUtil, bestMove
+            beta = min(alpha, minUtil)
 
         return minUtil, bestMove
 
