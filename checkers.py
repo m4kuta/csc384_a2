@@ -126,6 +126,9 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
         return utility(pos), bestMove
 
     if isMax:
+        if pos in cache:
+            return cache[pos], bestMove
+
         maxUtil = float('-inf')
 
         for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
@@ -136,8 +139,12 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
                 return maxUtil, bestMove
             alpha = max(alpha, maxUtil)
 
+        cache[pos.hash()] = maxUtil
         return maxUtil, bestMove
     else:
+        if pos in cache:
+            return cache[pos], bestMove
+
         minUtil = float('inf')
 
         for move in getMoves(pos, 'b'):
@@ -148,6 +155,7 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
                 return minUtil, bestMove
             beta = min(alpha, minUtil)
 
+        cache[pos.hash()] = minUtil
         return minUtil, bestMove
 
 def minimaxMax(pos, depth):
@@ -207,4 +215,4 @@ def writeBoard(board: Board, path):
 
 
 # inputBoard = readBoard(sys.argv[1])
-# writeBoard(minimax(inputBoard, 5, 'r')[1], sys.argv[2])
+# writeBoard(minimax(inputBoard, 5, 'r', , float('-inf'), float('inf'))[1], sys.argv[2])
