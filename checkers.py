@@ -1,6 +1,9 @@
 import copy
 import sys
 
+
+#No time to finish again :'(
+
 MAX_ROW, MAX_COL = 8, 8
 
 # key: board, value: minimax val
@@ -46,22 +49,24 @@ def getMoves(board: Board, player):
             piece: str = board.squares[i][j]
 
             if piece.lower() == player:
-                moves.extend(getValidMoves(board, piece, i, j))
+                moves.extend(list(getValidMoves(board, piece, i, j).values()))
 
     return moves
 
-def getValidMoves(board, piece, row, col):
-    moves = []
+def getValidMoves(board, piece, row, col, isConsecutive=False):
+    moves = {}
 
     if piece in ['r', 'R', 'B']:
-        moves += tryMove(board, piece, row, col, -1, -1) + tryMove(board, piece, row, col, -1, 1)
+        moves.update(tryMove(board, piece, row, col, -1, -1, isConsecutive))
+        moves.update(tryMove(board, piece, row, col, -1, 1, isConsecutive))
     if piece in ['b', 'R', 'B']:
-        moves += tryMove(board, piece, row, col, 1, -1) + tryMove(board, piece, row, col, 1, 1)
+        moves.update(tryMove(board, piece, row, col, 1, -1, isConsecutive))
+        moves.update(tryMove(board, piece, row, col, 1, 1, isConsecutive))
 
     return moves
 
-def tryMove(board, piece, oldRow, oldCol, deltaRow, deltaCol):
-    moves = []
+def tryMove(board, piece, oldRow, oldCol, deltaRow, deltaCol, isConsecutive):
+    moves = {}
 
     newRow = oldRow + deltaRow
     newCol = oldCol + deltaCol
@@ -72,9 +77,16 @@ def tryMove(board, piece, oldRow, oldCol, deltaRow, deltaCol):
     newSquare = board.squares[newRow][newCol]
 
     if newSquare == '.':
-        boardCopy = copy.deepcopy(board)
-        movePiece(boardCopy, oldRow, oldCol, newRow, newCol)
-        moves.append(boardCopy)
+        if not isConsecutive:
+            boardCopy = copy.deepcopy(board)
+            movePiece(boardCopy, oldRow, oldCol, newRow, newCol)
+            boardHash = boardCopy.hash()
+            if boardHash not in moves:
+                moves[boardHash] = boardCopy
+        else:
+            boardHash = board.hash()
+            if boardHash not in moves:
+                moves[boardHash] = board
 
     elif piece.lower != newSquare.lower:
         farRow = newRow + deltaRow
@@ -86,20 +98,40 @@ def tryMove(board, piece, oldRow, oldCol, deltaRow, deltaCol):
         farSquare = board.squares[farRow][farCol]
         if farSquare == '.':
             boardCopy = copy.deepcopy(board)
-            boardCopy.squares[newRow][newCol] = '.'
-            movePiece(boardCopy, oldRow, oldCol, farRow, farCol)
-            moves.extend(getValidMoves(boardCopy, piece, farRow, farCol))
+            # boardCopy.squares[newRow][newCol] = '.'
+            capturePiece(boardCopy, newRow, newCol)
+            if movePiece(boardCopy, oldRow, oldCol, farRow, farCol):
+                boardHash = boardCopy.hash()
+                if boardHash not in moves:
+                    moves[boardHash] = boardCopy # piece was crowned so turn ends
+            else:
+                moves.update(getValidMoves(boardCopy, boardCopy.squares[farRow][farCol], farRow, farCol, True))
 
     return moves
 
 def isInBounds(row, col):
     return 0 < row <  MAX_ROW and 0 < col < MAX_COL
 
+def capturePiece(board, row, col):
+    piece = board.squares[row][col]
+
+    if piece == 'r':
+        board.rCount -= 1
+    if piece == 'R':
+        board.RCount -= 1
+    if piece == 'b':
+        board.bCount -= 1
+    if piece == 'B':
+        board.BCount -= 1
+
+    board.squares[row][col] = '.'
+
 def movePiece(board, oldRow, oldCol, newRow, newCol):
     board.squares[oldRow][oldCol], board.squares[newRow][newCol] = \
         board.squares[newRow][newCol], board.squares[oldRow][oldCol]
 
-    if newRow == 0 or newRow == MAX_ROW - 1:
+    if (newRow == 0 or newRow == MAX_ROW - 1) and \
+            board.squares[newRow][newCol] == board.squares[newRow][newCol].lower:
         board.squares[newRow][newCol].capitalize()
 
         if board.squares[newRow][newCol] == 'R':
@@ -109,10 +141,13 @@ def movePiece(board, oldRow, oldCol, newRow, newCol):
             board.BCount += 1
             board.bCount -= 1
 
+        return True
+
+    return False
+
 def heuristic(board):
     # TODO
     return utility(board)
-
 
 def minimax(pos: Board, depth, isMax, alpha, beta):
     # TODO:
@@ -126,7 +161,7 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
         if pos in cache:
             return cache[pos], bestMove
 
-        maxUtil = float('-inf')
+        maxUtil = -sys.maxsize - 1
 
         for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
             util = minimax(move, depth - 1, False, alpha, beta)[0]
@@ -142,7 +177,7 @@ def minimax(pos: Board, depth, isMax, alpha, beta):
         if pos in cache:
             return cache[pos], bestMove
 
-        minUtil = float('inf')
+        minUtil = sys.maxsize
 
         for move in getMoves(pos, 'b'):
 
@@ -168,7 +203,7 @@ def cacheMinimax(pos: Board, depth, isMax, alpha, beta):
         if pos in cache:
             return cache[pos], bestMove
 
-        maxUtil = float('-inf')
+        maxUtil = -sys.maxsize - 1
 
         for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
             util = minimax(move, depth - 1, False, alpha, beta)[0]
@@ -184,7 +219,7 @@ def cacheMinimax(pos: Board, depth, isMax, alpha, beta):
         if pos in cache:
             return cache[pos], bestMove
 
-        minUtil = float('inf')
+        minUtil = sys.maxsize
 
         for move in getMoves(pos, 'b'):
             util = minimax(move, depth - 1, True, alpha, beta)[0]
@@ -198,7 +233,7 @@ def cacheMinimax(pos: Board, depth, isMax, alpha, beta):
         return minUtil, bestMove
 
 
-def alphaBeta(pos: Board, depth, isMax, alpha, beta):
+def alphaBetaMiniMax(pos: Board, depth, isMax, alpha, beta):
     # TODO:
     # Caching
     # Ordering
@@ -208,7 +243,7 @@ def alphaBeta(pos: Board, depth, isMax, alpha, beta):
         return utility(pos), bestMove
 
     if isMax:
-        maxUtil = float('-inf')
+        maxUtil = -sys.maxsize - 1
 
         for move in getMoves(pos, 'r'):  # TODO: decide if move == board state or something else
             util = minimax(move, depth - 1, False, alpha, beta)[0]
@@ -220,7 +255,7 @@ def alphaBeta(pos: Board, depth, isMax, alpha, beta):
 
         return maxUtil, bestMove
     else:
-        minUtil = float('inf')
+        minUtil = sys.maxsize
 
         for move in getMoves(pos, 'b'):
             util = minimax(move, depth - 1, True, alpha, beta)[0]
@@ -247,7 +282,7 @@ def dfsMinimax(pos: Board, depth, isMax):
 
 
 def minimaxMax(pos, depth):
-    maxUtil = float('-inf')
+    maxUtil = -sys.maxsize - 1
     bestMove = None
 
     for move in getMoves(pos, 'r'):
@@ -259,7 +294,7 @@ def minimaxMax(pos, depth):
 
 
 def minimaxMin(pos, depth):
-    minUtil = float('inf')
+    minUtil = sys.maxsize
     bestMove = None
 
     for move in getMoves(pos, 'b'):
@@ -304,4 +339,4 @@ def writeBoard(board: Board, path):
 
 
 # inputBoard = readBoard(sys.argv[1])
-# writeBoard(minimax(inputBoard, 5, 'r', , float('-inf'), float('inf'))[1], sys.argv[2])
+# writeBoard(minimax(inputBoard, 5, 'r', -sys.maxsize - 1, sys.maxsize)[1], sys.argv[2])
